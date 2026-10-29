@@ -1,0 +1,50 @@
+# Include this file within nginx's http {} context (e.g. sites-enabled).
+# Replace the example hostname/certificate paths after obtaining a certificate.
+# Port 3000 must remain bound to loopback and blocked from public ingress.
+limit_req_zone $binary_remote_addr zone=investmentor_auth:10m rate=5r/m;
+
+server {
+    listen 80;
+    server_name investmentor.example.com;
+    return 301 https://investmentor.example.com$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name investmentor.example.com;
+    ssl_certificate /etc/letsencrypt/live/investmentor.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/investmentor.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    client_max_body_size 128k;
+
+    # Do not record magic-link verification URLs or request bodies in logs.
+    location /api/auth/ {
+        access_log off;
+        limit_req zone=investmentor_auth burst=10 nodelay;
+        limit_req_status 429;
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Connection "";
+        proxy_cache off;
+        proxy_buffering off;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Replace this header; never trust arbitrary incoming client values.
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Connection "";
+        proxy_cache off;
+        proxy_buffering off;
+        proxy_read_timeout 60s;
+    }
+}

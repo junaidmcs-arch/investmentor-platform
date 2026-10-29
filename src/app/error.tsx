@@ -1,0 +1,2 @@
+"use client";
+export default function ErrorPage({reset}:{error:Error & {digest?:string};reset:()=>void}){return <div className="container error-page"><span className="eyebrow">SOMETHING WENT WRONG</span><h1>Let’s try that again.</h1><p>The page could not load. Your private information has not been shown. Please retry in a moment.</p><button className="button button-primary" onClick={reset}>Try again</button></div>;}
