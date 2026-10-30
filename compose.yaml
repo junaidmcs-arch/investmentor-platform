@@ -1,0 +1,115 @@
+name: investmentor-local
+
+x-app: &app
+  build: .
+  image: investmentor-local:dev
+  init: true
+  environment: &app-environment
+    NODE_ENV: development
+    NEXT_TELEMETRY_DISABLED: "1"
+    DATABASE_URL: postgresql://investmentor:local-development-only@database:5432/investmentor
+    DATABASE_CA_CERT: ""
+    AUTH_URL: http://localhost:${INVESTMENTOR_PORT:-3000}
+    NEXT_PUBLIC_SITE_URL: http://localhost:${INVESTMENTOR_PORT:-3000}
+    NEXT_PUBLIC_CONTACT_EMAIL: ""
+    NEXT_PUBLIC_WHATSAPP_NUMBER: ""
+    ADMIN_EMAILS: admin@investmentor.test
+    EMAIL_SERVER: smtp://mailpit:1025
+    EMAIL_FROM: InvestMentor Local <hello@investmentor.test>
+    TRUST_PROXY: "false"
+
+services:
+  database:
+    image: postgres:17.10
+    environment:
+      POSTGRES_USER: investmentor
+      POSTGRES_PASSWORD: local-development-only
+      POSTGRES_DB: investmentor
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U investmentor -d investmentor"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:v1.31.6
+    ports:
+      - "127.0.0.1:${INVESTMENTOR_MAIL_PORT:-8025}:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  initialize:
+    <<: *app
+    command: ["node", "scripts/docker-initialize.mjs"]
+    volumes:
+      - local-state:/local-state
+    depends_on:
+      database:
+        condition: service_healthy
+
+  web:
+    <<: *app
+    command: ["sh", "-c", "export AUTH_SECRET=$$(cat /local-state/auth-secret) && exec pnpm exec next dev --hostname 0.0.0.0"]
+    ports:
+      - "127.0.0.1:${INVESTMENTOR_PORT:-3000}:3000"
+    volumes:
+      - local-state:/local-state:ro
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 12
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+          initial_sync: true
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+        - action: rebuild
+          path: ./pnpm-workspace.yaml
+        - action: rebuild
+          path: ./next.config.ts
+        - action: rebuild
+          path: ./tsconfig.json
+
+  worker:
+    <<: *app
+    command: ["pnpm", "email:worker"]
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./src
+          target: /app/src
+          initial_sync: true
+        - action: sync+restart
+          path: ./scripts/email-worker.ts
+          target: /app/scripts/email-worker.ts
+          initial_sync: true
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+
+volumes:
+  postgres-data:
+  local-state:

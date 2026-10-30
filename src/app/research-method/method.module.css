@@ -1,0 +1,42 @@
+.intro { max-width: 900px; }
+.introNote { display: flex; align-items: center; gap: 9px; color: var(--green); font-size: 12px; margin-top: 24px; }
+.methodLayout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 70px; padding: 20px 0 65px; align-items: start; }
+.steps { list-style: none; padding: 0; margin: 0; }
+.step { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 19px; padding: 30px 0; border-top: 1px solid var(--line); }
+.step:last-child { padding-bottom: 0; }
+.stepNumber { color: #899d7b; font-family: var(--serif); font-size: 27px; line-height: 1.2; }
+.step h2 { font-size: 31px; margin-bottom: 12px; }
+.step p { font-size: 14px; line-height: 1.85; margin-bottom: 17px; }
+.step .question { color: var(--green); font-size: 16px; font-weight: 500; }
+.step .output { padding-left: 15px; border-left: 2px solid #c6d3bd; font-size: 13px; }
+.output strong { display: block; color: var(--green); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 5px; }
+.step a { line-height: 1.7; }
+.example { border: 1px solid #d9dfd2; background: #fffef9; border-radius: 8px; padding: 28px; }
+.exampleHeading { display: flex; align-items: center; gap: 10px; margin-bottom: 25px; }
+.example h2 { font-size: 32px; }
+.example p, .example dd { font-size: 13px; line-height: 1.85; }
+.distinctions { margin: 24px 0; }
+.distinctions > div { padding: 15px 0; border-top: 1px solid var(--line); }
+.distinctions dt { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.distinctions dd { margin: 0; color: var(--muted); }
+.illustration { padding: 18px; background: #eef2e7; border-radius: 5px; margin: 0 -8px 24px; }
+.illustration :global(.eyebrow) { font-size: 8px; }
+.illustration p { font-size: 11px; margin: 13px 0; }
+.illustration p:last-child { margin-bottom: 0; }
+.illustration .exampleResult { color: var(--green); font-size: 14px; border-block: 1px solid #d9e0ce; padding: 10px 0; }
+.provenance { border-block: 1px solid var(--line); padding: 45px 0; display: grid; grid-template-columns: .85fr 1.2fr; gap: 70px; }
+.provenance h2 { font-size: 38px; margin: 15px 0; }
+.provenance p { max-width: 330px; font-size: 14px; }
+.provenanceList { margin: 0; }
+.provenanceList > div { padding: 18px 0; border-bottom: 1px solid var(--line); }
+.provenanceList > div:first-child { padding-top: 0; }
+.provenanceList > div:last-child { padding-bottom: 0; border-bottom: 0; }
+.provenanceList dt { font-weight: 600; margin-bottom: 7px; font-size: 14px; }
+.provenanceList dd { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.9; }
+.provenanceList a { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
+.nextStep { padding: 55px 0 75px; display: flex; gap: 45px; align-items: center; justify-content: space-between; }
+.nextStep h2 { font-size: 33px; margin: 15px 0; }
+.nextStep p { font-size: 14px; max-width: 720px; line-height: 1.85; }
+.nextStep > a { flex-shrink: 0; }
+@media (max-width: 1000px) { .methodLayout { grid-template-columns: minmax(0, 1fr) 290px; gap: 35px; } .example { padding: 23px; } .provenance { gap: 35px; } .nextStep { flex-direction: column; align-items: flex-start; gap: 25px; } }
+@media (max-width: 750px) { .methodLayout { grid-template-columns: 1fr; gap: 35px; padding-bottom: 40px; } .example { max-width: 100%; } .provenance { grid-template-columns: 1fr; gap: 25px; padding: 35px 0; } .provenance p { max-width: 100%; } .provenance h2 { font-size: 33px; } .step { grid-template-columns: 30px minmax(0, 1fr); gap: 14px; } .stepNumber { font-size: 23px; } .step h2 { font-size: 28px; } .step .question { font-size: 15px; } .step p { font-size: 13px; } .nextStep { padding: 40px 0 50px; } }

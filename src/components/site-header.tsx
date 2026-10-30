@@ -9,7 +9,8 @@ const links = [
   { href: "/learn", label: "Learn" },
   { href: "/company-studies", label: "Company studies" },
   { href: "/market-notes", label: "Market notes" },
-  { href: "/tools/valuation", label: "Valuation lab" }
+  { href: "/tools/valuation", label: "Valuation lab" },
+  { href: "/research-method", label: "Our method" }
 ];
 
 export function Brand() {
@@ -29,6 +30,6 @@ export function SiteHeader() {
       <div className="header-actions"><Link href="/my-questions" className="login-link">My questions</Link><Link href="/ask" className="button button-primary button-small">Ask a question <ArrowUpRight size={15} /></Link></div>
       <button className="menu-toggle" aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
     </div>
-    {open && <nav className="mobile-nav" aria-label="Mobile navigation" onClick={() => setOpen(false)}>{links.map(link => <Link key={link.href} href={link.href}>{link.label}<ArrowUpRight size={16}/></Link>)}<Link href="/my-questions">My questions<ArrowUpRight size={16}/></Link><Link href="/ask">Ask a question<ArrowUpRight size={16}/></Link></nav>}
+    {open && <nav className="mobile-nav" aria-label="Mobile navigation" onClick={() => setOpen(false)}>{links.map(link => <Link key={link.href} href={link.href} aria-current={path.startsWith(link.href) ? "page" : undefined}>{link.label}<ArrowUpRight size={16}/></Link>)}<Link href="/my-questions">My questions<ArrowUpRight size={16}/></Link><Link href="/ask">Ask a question<ArrowUpRight size={16}/></Link></nav>}
   </header>;
 }

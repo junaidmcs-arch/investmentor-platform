@@ -7,7 +7,7 @@ export function SiteFooter() {
   const whatsapp = whatsappUrl();
   return <footer className="site-footer"><div className="container">
     <div className="footer-main"><div className="footer-brand"><Brand/><p>Better questions.<br/>More informed investors.</p><span className="footer-location">Made for Pakistan. Built by Validacore.</span></div>
-      <div><h3>Explore</h3><Link href="/learn">Learning library</Link><Link href="/company-studies">Company studies</Link><Link href="/market-notes">Market notes</Link><Link href="/tools/valuation">Valuation lab</Link></div>
+      <div><h3>Explore</h3><Link href="/learn">Learning library</Link><Link href="/company-studies">Company studies</Link><Link href="/market-notes">Market notes</Link><Link href="/tools/valuation">Valuation lab</Link><Link href="/research-method">Our research method</Link></div>
       <div><h3>Connect</h3><Link href="/about">Our approach</Link><Link href="/ask">Ask a question</Link><Link href="/sessions">Request a learning session</Link>{whatsapp && <a href={whatsapp} target="_blank" rel="noopener noreferrer">WhatsApp <ArrowUpRight size={12}/></a>}{site.email && <a href={`mailto:${site.email}`}>{site.email}</a>}</div>
       <div><h3>Your account</h3><Link href="/my-questions">My questions</Link><Link href="/sign-in">Sign in</Link><Link href="/dashboard">Consultant workspace</Link></div>
     </div>

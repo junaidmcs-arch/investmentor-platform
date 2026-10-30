@@ -2,7 +2,19 @@
 
 A Pakistan-focused PSX education and inquiry portal. The MVP combines a five-level learning library, illustrative company studies, market explainers, a transparent P/E valuation exercise, and a human-operated question and consultation workspace.
 
-## Run locally
+## Run with Docker Desktop (recommended)
+
+Start Docker Desktop in Linux-container mode, then run from this directory:
+
+```sh
+docker compose up --build -d
+```
+
+Open `http://localhost:3000`. The stack includes Node, PostgreSQL, and a local test inbox at `http://localhost:8025`; no Node installation on your computer is required. Sign in as `admin@investmentor.test` and open the sign-in email in that inbox to use the consultant workspace. All mail remains local. Use another `.test` address to try the client experience.
+
+See [Docker development](docs/docker-development.md) for live editing, tests, ports, and stopping/restarting safely. This configuration is for local development; production deployment remains separate.
+
+## Run directly with Node (optional)
 
 Requirements: Node.js 22.14 or newer (validated on Node 24), pnpm 11.25, and PostgreSQL 15+ when enabling accounts and submissions.
 

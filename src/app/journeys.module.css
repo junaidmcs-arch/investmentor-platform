@@ -1,0 +1,13 @@
+.journeys { padding-bottom: 0; }
+.journeyGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--line); }
+.journey { padding: 29px 30px; display: flex; flex-direction: column; align-items: flex-start; transition: background .18s; }
+.journey:first-child { padding-left: 0; }
+.journey:last-child { padding-right: 0; }
+.journey + .journey { border-left: 1px solid var(--line); }
+.journey:hover { background: #f0f4e9; }
+.journey > svg { color: #78906b; margin-bottom: 20px; }
+.journey h3 { font-family: var(--serif); font-weight: 400; font-size: 26px; line-height: 1.2; margin-bottom: 12px; }
+.journey p { font-size: 13px; line-height: 1.85; margin-bottom: 23px; flex: 1; }
+.journey :global(.text-link) { font-size: 11px; }
+@media (max-width: 850px) { .journey { padding: 24px 19px; } .journey h3 { font-size: 24px; } .journey p { font-size: 12px; } }
+@media (max-width: 600px) { .journeyGrid { grid-template-columns: 1fr; } .journey, .journey:first-child, .journey:last-child { padding: 25px 0; } .journey + .journey { border-left: 0; border-top: 1px solid var(--line); } .journey > svg { margin-bottom: 15px; } .journey p { font-size: 13px; margin-bottom: 17px; } .journey :global(.text-link) { font-size: 12px; } }

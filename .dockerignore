@@ -1,0 +1,13 @@
+.git
+.next
+node_modules
+.env*
+.codex-preview
+coverage
+test-results
+out
+*.log
+*.tsbuildinfo
+next-env.d.ts
+docs
+README.md
