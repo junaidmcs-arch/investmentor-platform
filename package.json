@@ -5,7 +5,7 @@
   "packageManager": "pnpm@11.25.0",
   "engines": { "node": ">=22.14" },
   "scripts": {
-    "dev": "next dev --hostname 127.0.0.1",
+    "dev": "next dev --webpack --hostname 127.0.0.1",
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "next typegen && tsc --noEmit",

@@ -54,7 +54,7 @@ services:
 
   web:
     <<: *app
-    command: ["sh", "-c", "export AUTH_SECRET=$$(cat /local-state/auth-secret) && exec pnpm exec next dev --hostname 0.0.0.0"]
+    command: ["sh", "-c", "export AUTH_SECRET=$$(cat /local-state/auth-secret) && exec pnpm exec next dev --webpack --hostname 0.0.0.0"]
     ports:
       - "127.0.0.1:${INVESTMENTOR_PORT:-3000}:3000"
     volumes:

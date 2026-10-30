@@ -24,6 +24,10 @@ Use **localhost** consistently, including when opening the sign-in links. The Co
 
 ## Work on the application
 
+Local development uses Webpack explicitly. The default Turbopack development server produced a continuous compile/reload loop in this Docker setup even without source changes. Webpack keeps hot reload available for intentional edits. The Next.js development indicator may briefly show compilation when opening a new page; it should settle once the page loads.
+
+After switching an existing container to this configuration, refresh any open browser tab once to load the new development assets. If it still references old Turbopack chunks, use a hard refresh (`Ctrl+Shift+R`).
+
 ```powershell
 docker compose watch
 ```

@@ -13,4 +13,4 @@ RUN pnpm install --frozen-lockfile
 
 COPY --chown=node:node . .
 EXPOSE 3000
-CMD ["pnpm", "exec", "next", "dev", "--hostname", "0.0.0.0"]
+CMD ["pnpm", "exec", "next", "dev", "--webpack", "--hostname", "0.0.0.0"]
