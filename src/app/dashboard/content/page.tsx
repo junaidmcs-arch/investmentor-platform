@@ -4,7 +4,7 @@ import { Eye, FileText, Plus, Save } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import { apiRequest, type ManagedContent, usePortalSession } from "@/components/forms/portal-client";
-import { AccessGate, ErrorMessage, Field, StatusBadge, WorkspaceNavigation } from "@/components/forms/portal-ui";
+import { AccessGate, ErrorMessage, Field, StatusBadge } from "@/components/forms/portal-ui";
 import styles from "@/components/forms/portal.module.css";
 
 type ContentDraft = { title: string; slug: string; kind: ManagedContent["kind"]; excerpt: string; body: string; level: string; category: string; readMinutes: string; author: string; status: ManagedContent["status"]; featured: boolean };
@@ -42,7 +42,7 @@ export default function ContentManagerPage() {
     } catch (problem) { setError(problem instanceof Error ? problem.message : "Could not save content."); }
     finally { setBusy(false); }
   }
-  return <div className={`container ${styles.workspace}`}><header className="page-intro"><span className="eyebrow">Consultant workspace</span><h1>Build a library<br/>worth returning to.</h1><p className="muted">Publish clear lessons, documented case studies, and useful market explainers.</p></header><AccessGate session={session} staff><WorkspaceNavigation/>
+  return <div className={`container ${styles.workspace}`}><header className="page-intro"><span className="eyebrow">Consultant workspace</span><h1>Build a library<br/>worth returning to.</h1><p className="muted">Publish clear lessons, documented case studies, and useful market explainers.</p></header><AccessGate session={session} staff>
     <div className={styles.editorLayout}><aside><button className="button button-primary" onClick={createNew} disabled={busy} style={{ width: "100%", marginBottom: 18 }}><Plus size={16}/>New content</button>{loading && <p className={styles.meta} role="status">Loading library…</p>}<div className={styles.contentList}>{contents.map((content) => <button className={styles.contentChoice} key={content.id} aria-pressed={selectedId === content.id} disabled={busy} onClick={() => select(content)}>{content.title}<span>{content.kind} · {content.status.toLowerCase()}</span></button>)}{!loading && !contents.length && <div className={styles.empty}><FileText size={24}/><p>Your content library is ready for its first draft.</p></div>}</div></aside>
     <section className={styles.formPanel}><div className={styles.inline} style={{ justifyContent: "space-between", marginBottom: 25 }}><h2 style={{ margin: 0 }}>{selectedId ? "Edit content" : "Create content"}</h2><StatusBadge status={draft.status}/></div><form className={styles.stack} onSubmit={submit}>
       <Field id="content-title" label="Title *"><input className="input" id="content-title" required minLength={5} maxLength={180} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })}/></Field>

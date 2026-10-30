@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Send, Save } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { apiRequest, displayLabel, pakistanDate, pakistanToday, type QuestionDetail, usePortalSession } from "@/components/forms/portal-client";
-import { AccessGate, ErrorMessage, Field, StatusBadge, WorkspaceNavigation } from "@/components/forms/portal-ui";
+import { AccessGate, ErrorMessage, Field, StatusBadge } from "@/components/forms/portal-ui";
 import styles from "@/components/forms/portal.module.css";
 
 export default function ReviewQuestionPage() {
@@ -54,7 +54,7 @@ export default function ReviewQuestionPage() {
     } catch (problem) { setError(problem instanceof Error ? problem.message : "Could not save the response."); }
     finally { setBusy(false); }
   }
-  return <div className={`container ${styles.workspace}`}><header className="page-intro"><Link className="text-link" href="/dashboard"><ArrowLeft size={15}/>Question inbox</Link><h1>Consider the question.</h1></header><AccessGate session={session} staff><WorkspaceNavigation/><ErrorMessage message={error}/>{success && <div className={styles.success} role="status"><CheckCircle2 size={18}/>{success}</div>}{!data && !error ? <p className={styles.loading} role="status">Loading the conversation…</p> : data && <div className={styles.detailGrid} style={{ marginTop: 24 }}><div>
+  return <div className={`container ${styles.workspace}`}><header className="page-intro"><Link className="text-link" href="/dashboard"><ArrowLeft size={15}/>Question inbox</Link><h1>Consider the question.</h1></header><AccessGate session={session} staff><ErrorMessage message={error}/>{success && <div className={styles.success} role="status"><CheckCircle2 size={18}/>{success}</div>}{!data && !error ? <p className={styles.loading} role="status">Loading the conversation…</p> : data && <div className={styles.detailGrid} style={{ marginTop: 24 }}><div>
     <section className={styles.formPanel}><div className={styles.inline}><span className={styles.meta}>{data.question.reference}</span><StatusBadge status={data.question.status}/></div><h2>{data.question.subject}</h2><p className={styles.meta}>{data.question.name} · {data.question.email || "WhatsApp contact"}<br/>{displayLabel(data.question.category)} · {pakistanDate(data.question.createdAt)}</p><p className={styles.message}>{data.question.body}</p></section>
     <section className={styles.response}><h2>Prepare a response</h2><p className={styles.meta}>Drafts remain private. A published response needs an explanation, risks, assumptions, and an analysis date.</p><form className={styles.stack} onSubmit={(event) => { event.preventDefault(); void saveResponse(true); }}>
       <Field id="answer" label="Explanation *"><textarea className="textarea" id="answer" rows={9} value={draft.body} required minLength={20} maxLength={20000} onChange={(event) => setDraft({ ...draft, body: event.target.value })}/></Field>

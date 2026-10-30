@@ -35,8 +35,3 @@ export function AccessGate({ session, staff = false, children }: { session: Sess
   if (staff && !["ADMIN", "CONSULTANT"].includes(session.user.role)) return <div className={styles.authNotice}><LockKeyhole size={30}/><h2>This is the consultant workspace</h2><p>Your account can access your own questions and responses.</p><Link className="button button-primary" href="/my-questions">Go to my questions</Link></div>;
   return children;
 }
-
-export function WorkspaceNavigation() {
-  const pathname = usePathname();
-  return <nav className={styles.workspaceNav} aria-label="Consultant workspace"><Link href="/dashboard" aria-current={pathname === "/dashboard" || pathname.startsWith("/dashboard/questions/") ? "page" : undefined}>Questions</Link><Link href="/dashboard/consultations" aria-current={pathname === "/dashboard/consultations" ? "page" : undefined}>Sessions</Link><Link href="/dashboard/content" aria-current={pathname === "/dashboard/content" ? "page" : undefined}>Content library</Link></nav>;
-}

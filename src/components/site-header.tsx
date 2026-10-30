@@ -13,8 +13,8 @@ const links = [
   { href: "/research-method", label: "Our method" }
 ];
 
-export function Brand() {
-  return <Link href="/" className="brand" aria-label="InvestMentor home">
+export function Brand({ href = "/", label = "InvestMentor home" }: { href?: string; label?: string }) {
+  return <Link href={href} className="brand" aria-label={label}>
     <span className="brand-symbol" aria-hidden="true"><svg width="25" height="28" viewBox="0 0 25 28" fill="none"><path d="M3 22V12h5v10M10 22V7h5v15M17 22V2h5v20" stroke="currentColor" strokeWidth="2.3"/><path d="M2 26h22" stroke="currentColor" strokeWidth="2"/></svg></span>
     <span><span className="brand-name">Invest<span>Mentor</span><span className="brand-dot">.</span></span><span className="brand-byline">BY VALIDACORE</span></span>
   </Link>;

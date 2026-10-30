@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Inbox, Plus, Search } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { apiRequest, categories, pakistanDate, type Question, usePortalSession } from "@/components/forms/portal-client";
-import { AccessGate, ErrorMessage, Field, StatusBadge, WorkspaceNavigation } from "@/components/forms/portal-ui";
+import { AccessGate, ErrorMessage, Field, StatusBadge } from "@/components/forms/portal-ui";
 import styles from "@/components/forms/portal.module.css";
 
 type Overview = { questions: { total: number; new: number; inProgress: number; answered: number; declined: number }; consultations: { total: number; requested: number; confirmed: number }; content: { published: number; drafts: number }; notifications: { pending: number; failed: number } };
@@ -40,7 +40,7 @@ export default function DashboardPage() {
     catch (problem) { setError(problem instanceof Error ? problem.message : "Could not log this inquiry."); }
     finally { setLogging(false); }
   }
-  return <div className={`container ${styles.workspace}`}><header className="page-intro"><span className="eyebrow">Consultant workspace</span><h1>Good guidance<br/>starts with listening.</h1><p className="muted">Review questions, prepare considered responses, and keep the conversation moving.</p></header><AccessGate session={session} staff><WorkspaceNavigation/>
+  return <div className={`container ${styles.workspace}`}><header className="page-intro"><span className="eyebrow">Consultant workspace</span><h1>Good guidance<br/>starts with listening.</h1><p className="muted">Review questions, prepare considered responses, and keep the conversation moving.</p></header><AccessGate session={session} staff>
     {overview && <div className={styles.countGrid}><div className={styles.count}><span>New questions</span><strong>{overview.questions.new}</strong></div><div className={styles.count}><span>In progress</span><strong>{overview.questions.inProgress}</strong></div><div className={styles.count}><span>Answered</span><strong>{overview.questions.answered}</strong></div><div className={styles.count}><span>Session requests</span><strong>{overview.consultations.requested}</strong></div></div>}
     {overview && overview.notifications.failed > 0 && <div className={styles.quietNotice} role="status">{overview.notifications.failed} email notification(s) need attention. Check the notification worker and email service configuration before retrying delivery.</div>}
     <div className={styles.sectionHeader}><h2>Question inbox</h2><button className="button button-secondary button-small" onClick={() => setShowOffline((value) => !value)} aria-expanded={showOffline}><Plus size={15}/>Log WhatsApp inquiry</button></div>

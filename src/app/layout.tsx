@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteChrome } from "@/components/site-chrome";
 import { site } from "@/lib/site";
 import "@fontsource/dm-sans/400.css";
 import "@fontsource/dm-sans/500.css";
@@ -19,5 +20,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en-PK"><body><a className="skip-link" href="#main-content">Skip to content</a><SiteHeader/><main id="main-content">{children}</main><SiteFooter/></body></html>;
+  return <html lang="en-PK" data-scroll-behavior="smooth"><body><a className="skip-link" href="#main-content">Skip to content</a><SiteChrome header={<SiteHeader/>} footer={<SiteFooter/>}>{children}</SiteChrome></body></html>;
 }

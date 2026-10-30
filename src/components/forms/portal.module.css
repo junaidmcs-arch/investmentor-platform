@@ -28,9 +28,6 @@
 .authNotice { max-width:620px; padding:36px; margin:40px 0 100px; border:1px solid #dcded3; border-radius:12px; background:#fffefb; }
 .authNotice p { line-height:1.8; color:#657064; }
 .workspace { padding-bottom:80px; }
-.workspaceNav { display:flex; gap:8px; padding:8px 0 24px; margin-bottom:28px; border-bottom:1px solid #dcded3; flex-wrap:wrap; }
-.workspaceNav a { padding:9px 15px; border-radius:7px; font-size:14px; font-weight:500; text-decoration:none; color:#5b695b; }
-.workspaceNav a[aria-current="page"] { background:#264d39; color:white; }
 .countGrid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:32px; }
 .count { padding:22px; border:1px solid #dcded3; border-radius:10px; background:#fffefb; }
 .count span { display:block; font-size:12px; color:#6b7368; margin-bottom:12px; }
