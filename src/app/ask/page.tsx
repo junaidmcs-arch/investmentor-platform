@@ -11,7 +11,7 @@ export default function AskPage() {
   const session = usePortalSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ reference: string; message: string } | null>(null);
+  const [result, setResult] = useState<{ reference: string; message: string; canTrack: boolean } | null>(null);
   const [subject, setSubject] = useState("");
   useEffect(() => {
     const topic = new URLSearchParams(window.location.search).get("topic");
@@ -30,14 +30,14 @@ export default function AskPage() {
     <header className="page-intro"><span className="eyebrow">A little clarity goes a long way</span><h1>What would you<br/>like to understand?</h1><p className="muted">Ask about a financial concept, a company disclosure, or a research method. We’ll help you find a thoughtful starting point.</p></header>
     <div className={styles.formLayout}>
       <section className={styles.formPanel} aria-label="Submit a question">
-        {result ? <div className={styles.success} role="status"><CheckCircle2 size={30}/><h2>Your question is in the queue.</h2><p>{result.message}</p><span className={styles.reference}>{result.reference}</span><p>Keep this reference for follow-ups. Sign in with the email you provided to securely view your question and published response.</p><Link className="button button-primary" href="/my-questions">View my questions <ArrowRight size={16}/></Link></div> : <form onSubmit={submit} className={styles.stack}>
+        {result ? <div className={styles.success} role="status"><CheckCircle2 size={30}/><h2>Your question is in the queue.</h2><p>{result.message}</p><span className={styles.reference}>{result.reference}</span><p>Keep this reference for follow-ups. {result.canTrack ? "Sign in with the email you provided to securely view your question and published response." : "The team will follow up manually using the WhatsApp number you provided."}</p>{result.canTrack && <Link className="button button-primary" href="/my-questions">View my questions <ArrowRight size={16}/></Link>}</div> : <form onSubmit={submit} className={styles.stack}>
           <div><h2>Ask your question</h2><p className={styles.meta}>No account needed to submit. Fields marked * are required.</p></div>
           <ConfigurationNotice session={session}/>
           <div className={styles.split}>
             <Field id="name" label="Your name *"><input key={session.user?.id ?? "guest"} className="input" id="name" name="name" autoComplete="name" required minLength={2} maxLength={100} defaultValue={session.user?.name ?? ""}/></Field>
-            <Field id="email" label="Email address *" hint="Use this email to access your private reply."><input key={session.user?.id ?? "guest"} className="input" id="email" name="email" type="email" autoComplete="email" required maxLength={254} defaultValue={session.user?.email ?? ""} readOnly={Boolean(session.user)}/></Field>
+            <Field id="email" label={session.user ? "Email address *" : "Email address"} hint="Email enables private online history. Without email, provide WhatsApp for manual follow-up."><input key={session.user?.id ?? "guest"} className="input" id="email" name="email" type="email" autoComplete="email" required={Boolean(session.user)} maxLength={254} defaultValue={session.user?.email ?? ""} readOnly={Boolean(session.user)}/></Field>
           </div>
-          <Field id="whatsapp" label="WhatsApp number" hint="Optional · e.g. 0300 1234567"><input className="input" id="whatsapp" name="whatsapp" type="tel" autoComplete="tel" maxLength={30}/></Field>
+          <Field id="whatsapp" label="WhatsApp number" hint="Required when you do not provide email · e.g. 0300 1234567"><input className="input" id="whatsapp" name="whatsapp" type="tel" autoComplete="tel" maxLength={30}/></Field>
           <Field id="category" label="What is your question about? *"><select className="select" id="category" name="category" required defaultValue=""><option value="" disabled>Select a topic</option>{categories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
           <Field id="subject" label="A short title *"><input className="input" id="subject" name="subject" placeholder="e.g. How do I interpret a company’s debt-to-equity ratio?" required minLength={5} maxLength={160} value={subject} onChange={event => setSubject(event.target.value)}/></Field>
           <Field id="body" label="Your question *" hint="Include useful context. Keep account numbers, passwords, CNIC details, and other sensitive information private."><textarea className="textarea" id="body" name="body" required minLength={20} maxLength={6000} rows={6} placeholder="Tell us what you are trying to understand…"/></Field>

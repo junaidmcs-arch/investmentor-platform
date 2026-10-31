@@ -12,8 +12,9 @@ export function normalizePakistaniPhone(input: string) {
 const phone = z.string().trim().max(30).optional().transform(value => normalizePakistaniPhone(value ?? ""))
   .refine(value => !value || /^\+923\d{9}$/.test(value), "Enter a Pakistani mobile number, for example 0300 1234567.");
 const contact = { name: z.string().trim().min(2).max(100), email, whatsapp: phone };
-export const questionInput = z.object({ ...contact, category: z.string().trim().min(2).max(60), subject: z.string().trim().min(5).max(160), body: z.string().trim().min(20).max(6000) });
-export const offlineQuestionInput = questionInput.extend({ email: z.union([email, z.literal("")]).optional(), whatsapp: phone }).refine(value => Boolean(value.whatsapp), { message: "A WhatsApp number is required for an offline inquiry.", path: ["whatsapp"] });
+const questionFields = z.object({ ...contact, email: z.union([email, z.literal("")]).optional(), category: z.string().trim().min(2).max(60), subject: z.string().trim().min(5).max(160), body: z.string().trim().min(20).max(6000) });
+export const questionInput = questionFields.refine(value => Boolean(value.email || value.whatsapp), { message: "Provide an email address or Pakistani WhatsApp number.", path: ["email"] });
+export const offlineQuestionInput = questionFields.refine(value => Boolean(value.whatsapp), { message: "A WhatsApp number is required for an offline inquiry.", path: ["whatsapp"] });
 export const consultationInput = z.object({ ...contact, preferredAt: z.string().datetime({ offset: true }), topic: z.string().trim().min(5).max(160), notes: z.string().trim().max(3000).optional().default("") })
   .refine(value => { const date = Date.parse(value.preferredAt); return date > Date.now() && date < Date.now() + 180 * 86400000; }, { message: "Choose a preferred time within the next 180 days.", path: ["preferredAt"] });
 export const questionStatusInput = z.object({ status: z.enum(["NEW", "IN_PROGRESS", "ANSWERED", "DECLINED"]) });
@@ -27,3 +28,13 @@ export const consultationUpdateInput = z.object({ status: z.enum(["REQUESTED", "
 export const contentInput = z.object({ slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(120), kind: z.enum(["lesson", "study", "market", "faq"]), title: z.string().trim().min(5).max(180), excerpt: z.string().trim().min(15).max(500), body: z.string().trim().min(30).max(80000), level: z.number().int().min(1).max(5).optional().nullable(), category: z.string().trim().min(2).max(80), readMinutes: z.number().int().min(1).max(120).default(5), author: z.string().trim().min(2).max(100), featured: z.boolean().default(false), status: z.enum(["DRAFT", "PUBLISHED"]).default("DRAFT") })
   .refine(value => value.kind !== "lesson" || Boolean(value.level), {message:"Choose a learning level for a lesson.",path:["level"]});
 export const idInput = z.string().uuid();
+
+export const userUpdateInput = z.object({ role: z.enum(["CLIENT", "CONSULTANT", "ADMIN"]), suspended: z.boolean() });
+export const consultantCreateInput = z.object({ name: z.string().trim().min(2).max(100), email: emailInput });
+export const moderationInput = z.object({ hold: z.boolean(), note: z.string().trim().min(5).max(1000) });
+export const bookingUrlInput = z.object({ bookingUrl: z.string().trim().max(1000).refine(value => !value || (() => { try { const url = new URL(value); return url.protocol === "https:" && Boolean(url.hostname) && !url.username && !url.password; } catch { return false; } })(), "Enter an HTTPS booking link without embedded credentials.") });
+export const slotInput = z.object({ startsAt: z.string().datetime({offset:true}), endsAt: z.string().datetime({offset:true}) }).refine(value => {
+  const start = Date.parse(value.startsAt), end = Date.parse(value.endsAt);
+  return start > Date.now() && start < Date.now() + 180 * 86400000 && end - start >= 15 * 60000 && end - start <= 180 * 60000;
+}, "Choose a future slot within 180 days, lasting 15–180 minutes.");
+export const slotBookingInput = z.object({ name: contact.name, slotId: idInput, topic: z.string().trim().min(5).max(160), notes: z.string().trim().max(3000).default("") });

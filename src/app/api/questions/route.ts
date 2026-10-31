@@ -7,6 +7,6 @@ export const GET=api(async()=>({questions:await listQuestions(await requireUser(
 export const POST=api(async request=>{
   requireServices();
   const data=questionInput.parse(await jsonInput(request));
-  await limitSubmission(request,data.email,"question");
+  await limitSubmission(request,data.email || data.whatsapp,"question");
   return createQuestion(data,await getCurrentUser());
 });

@@ -5,6 +5,7 @@ import { query, transaction } from "./db";
 import { HttpError } from "./http";
 import { appLink, enqueueEmail } from "./notifications";
 import { contentColumns, mapContent } from "./content";
+import { recordAudit } from "./audit";
 import { contentInput, consultationInput, consultationUpdateInput, questionInput, offlineQuestionInput, responseInput } from "./validation";
 
 const questionColumns = `q.id,q.reference,q.category,q.subject,q.body,q.status,q.source,q.created_at AS "createdAt",q.updated_at AS "updatedAt",c.name,c.email,c.whatsapp,c.user_id AS "userId"`;
@@ -21,6 +22,7 @@ function requireStaff(user: CurrentUser) {
   if (!isStaff(user)) throw new HttpError(403, "Consultant access is required.");
 }
 async function upsertContact(client: PoolClient, data: ContactData, user: CurrentUser | null) {
+  if (user && !data.email) throw new HttpError(400, "Use the email address belonging to your signed-in account.");
   if (user && data.email && data.email.toLowerCase() !== user.email.toLowerCase()) throw new HttpError(400, "Use the email address belonging to your signed-in account.");
   if (!data.email) {
     const result = await client.query("INSERT INTO contacts(name,whatsapp) VALUES($1,$2) RETURNING id", [data.name,data.whatsapp || null]);
@@ -44,7 +46,7 @@ export async function createQuestion(data: z.infer<typeof questionInput> | z.inf
     const result = await client.query("INSERT INTO questions(reference,contact_id,category,subject,body,source) VALUES($1,$2,$3,$4,$5,$6) RETURNING id", [reference,contactId,data.category,data.subject,data.body,offline ? "WHATSAPP" : "WEBSITE"]);
     await client.query("INSERT INTO question_events(question_id,actor_id,to_status,note) VALUES($1,$2,'NEW','Question received')", [result.rows[0].id,user?.id ?? null]);
     await enqueueEmail(client,data.email || null,`${reference}: your question was received`, `We received your question. A consultant will review it.\n\nUse your verified email to access your private history:\n${appLink("/my-questions")}\n\nYour reference: ${reference}\nThis acknowledgement is not investment advice.`, `question-received:${result.rows[0].id}`);
-    return { id: result.rows[0].id, reference, message: "Your question has been received. Sign in with your email to view its progress." };
+    return { id: result.rows[0].id, reference, canTrack: Boolean(data.email), message: data.email ? "Your question has been received. Sign in with your email to view its progress." : "Your question has been received for manual WhatsApp follow-up. Online history requires a verified email account." };
   });
 }
 export async function listQuestions(user: CurrentUser, admin = false, status = "", search = "") {
@@ -79,6 +81,7 @@ export async function updateQuestionStatus(id: string, status: string, user: Cur
       if (!response.rowCount) throw new HttpError(400,"Publish a response with risks and assumptions before marking the question answered.");
     }
     await client.query("UPDATE questions SET status=$2,updated_at=now() WHERE id=$1",[id,status]);
+    await recordAudit(client,user.id,"question.status_changed","question",id,{from:question.status,to:status});
     const event = await client.query("INSERT INTO question_events(question_id,actor_id,from_status,to_status,note) VALUES($1,$2,$3,$4,'Status updated') RETURNING id",[id,user.id,question.status,status]);
     await enqueueEmail(client,question.email,`${question.reference}: status updated`,`Your question is now ${status.replaceAll("_"," ").toLowerCase()}.\n\nView your private history: ${appLink("/my-questions")}`,`question-status:${event.rows[0].id}`);
     return {message:"Question status updated."};
@@ -103,7 +106,8 @@ export async function saveResponse(id: string, data: z.infer<typeof responseInpu
       await client.query("INSERT INTO question_events(question_id,actor_id,from_status,to_status,note) VALUES($1,$2,$3,'ANSWERED','Consultant response published')",[id,user.id,question.status]);
       await enqueueEmail(client,question.email,`${question.reference}: your response is ready`,`A consultant has published a response to your question.\n\nRead it securely after signing in: ${appLink(`/my-questions/${id}`)}\n\nReference numbers do not provide access to private responses.`,`response-published:${responseId}`);
     }
-    return {id:responseId,message:data.publish ? "Response published and notification queued." : "Draft saved privately."};
+    await recordAudit(client,user.id,data.publish ? "response.published" : "response.drafted","question",id);
+    return {id:responseId,message:data.publish ? "Response published and notification queued where email is available. WhatsApp-only contacts need manual follow-up." : "Draft saved privately."};
   });
 }
 export async function createConsultation(data: z.infer<typeof consultationInput>, user: CurrentUser | null) {
@@ -125,11 +129,19 @@ export async function listConsultations(user: CurrentUser,admin=false) {
 export async function updateConsultation(id:string,data:z.infer<typeof consultationUpdateInput>,user:CurrentUser) {
   requireStaff(user);
   return transaction(async client=>{
+    const previous=(await client.query("SELECT slot_id,status FROM consultations WHERE id=$1 FOR UPDATE",[id])).rows[0];
+    if(!previous) throw new HttpError(404,"Session request not found.");
+    if(previous.slot_id) {
+      const slot=(await client.query("SELECT starts_at FROM appointment_slots WHERE id=$1 FOR UPDATE",[previous.slot_id])).rows[0];
+      if(previous.status==='CANCELLED' && data.status!=='CANCELLED') throw new HttpError(409,"A cancelled slot reservation cannot be reopened. Make a new reservation.");
+      if(data.confirmedAt && new Date(data.confirmedAt).getTime()!==new Date(slot.starts_at).getTime()) throw new HttpError(400,"Keep the reserved slot time, or cancel this session and reserve another slot.");
+    }
     const result=await client.query("UPDATE consultations SET status=$2,confirmed_at=$3,meeting_url=$4,staff_notes=$5,updated_at=now() WHERE id=$1 RETURNING reference,contact_id,updated_at",[id,data.status,data.confirmedAt ?? null,data.meetingUrl,data.notes]);
     if(!result.rowCount) throw new HttpError(404,"Session request not found.");
     const appointment=result.rows[0]; const contact=await client.query("SELECT email FROM contacts WHERE id=$1",[appointment.contact_id]);
     const confirmation=data.confirmedAt ? `\nTime: ${new Intl.DateTimeFormat("en-PK",{dateStyle:"full",timeStyle:"short",timeZone:"Asia/Karachi"}).format(new Date(data.confirmedAt))} (Pakistan time)` : "";
     await enqueueEmail(client,contact.rows[0].email,`${appointment.reference}: session updated`,`Your session status is ${data.status.toLowerCase()}.${confirmation}\n\nView details securely: ${appLink("/my-questions")}`,`consultation-updated:${id}:${appointment.updated_at.toISOString()}`);
+    await recordAudit(client,user.id,"consultation.updated","consultation",id,{status:data.status});
     return {message:"Session updated and notification queued."};
   });
 }
@@ -143,7 +155,7 @@ export async function adminOverview(user:CurrentUser) {
   ]);
   return {questions:q.rows[0],consultations:c.rows[0],content:content.rows[0],notifications:n.rows[0]};
 }
-export async function listAdminContent(user:CurrentUser) { requireStaff(user); return (await query(`SELECT ${contentColumns} FROM contents ORDER BY updated_at DESC LIMIT 200`)).rows.map(mapContent); }
+export async function listAdminContent(user:CurrentUser) { requireStaff(user); return (await query(`SELECT ${contentColumns},moderation_hold AS "moderationHold",moderation_note AS "moderationNote" FROM contents ORDER BY updated_at DESC LIMIT 200`)).rows.map(mapContent); }
 export async function saveContent(data:z.infer<typeof contentInput>,user:CurrentUser,id?:string) {
   requireStaff(user);
   return transaction(async client=>{
@@ -151,6 +163,7 @@ export async function saveContent(data:z.infer<typeof contentInput>,user:Current
     if(id) {
       const before=await client.query("SELECT * FROM contents WHERE id=$1 FOR UPDATE",[id]);
       if(!before.rowCount) throw new HttpError(404,"Content not found.");
+      if(before.rows[0].moderation_hold) throw new HttpError(409,"An administrator must release the moderation hold before this content can be edited or published.");
       await client.query("INSERT INTO content_revisions(content_id,actor_id,snapshot) VALUES($1,$2,$3)",[id,user.id,JSON.stringify(before.rows[0])]);
       await client.query(`UPDATE contents SET slug=$2,kind=$3,title=$4,excerpt=$5,body=$6,level=$7,category=$8,read_minutes=$9,author=$10,featured=$11,status=$12,
         published_at=CASE WHEN $12='PUBLISHED' THEN COALESCE(published_at,now()) ELSE NULL END,updated_at=now() WHERE id=$1`,
@@ -161,6 +174,7 @@ export async function saveContent(data:z.infer<typeof contentInput>,user:Current
         [data.slug,data.kind,data.title,data.excerpt,data.body,data.level??null,data.category,data.readMinutes,data.author,data.featured,data.status,user.id]);
       contentId=result.rows[0].id;
     }
+    await recordAudit(client,user.id,data.status === "PUBLISHED" ? "content.published" : "content.drafted","content",contentId!);
     return {id:contentId,message:data.status === "PUBLISHED" ? "Content published." : "Content draft saved."};
   });
 }

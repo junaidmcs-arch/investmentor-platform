@@ -17,7 +17,7 @@ export default function SignInPage() {
   useEffect(() => {
     const parameters = new URLSearchParams(window.location.search);
     const next = parameters.get("next");
-    if (next && /^\/(?:dashboard|my-questions)(?:\/[^?#]*)?$/.test(next)) setReturnTo(next);
+    if (next && /^\/(?:(?:dashboard|my-questions|learn|company-studies|market-notes)(?:\/[a-zA-Z0-9/-]*)?|sessions\/book)$/.test(next)) setReturnTo(next);
     if (parameters.get("sent") === "1") setSent(true);
     const authError = parameters.get("error");
     if (authError) setError(authErrorMessage(authError));

@@ -4,14 +4,12 @@ import PostgresAdapter from "@auth/pg-adapter";
 import { getPool, isDatabaseConfigured, query } from "./db";
 import { smtpConnectionUrl } from "./smtp";
 import { emailInput } from "./validation";
+import { configuredAdmin } from "./roles";
 
 export type Role = "CLIENT" | "CONSULTANT" | "ADMIN";
 export type CurrentUser = { id: string; name: string | null; email: string; role: Role };
 export function isAuthConfigured() {
   return isDatabaseConfigured() && Boolean(process.env.AUTH_SECRET && process.env.EMAIL_SERVER && process.env.EMAIL_FROM && process.env.AUTH_URL);
-}
-function configuredAdmin(email: string) {
-  return (process.env.ADMIN_EMAILS ?? "").split(",").map(value => value.trim().toLowerCase()).filter(Boolean).includes(email.toLowerCase());
 }
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: isDatabaseConfigured() ? PostgresAdapter(getPool()) : undefined,
@@ -26,6 +24,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "database", maxAge: 7 * 24 * 60 * 60 },
   pages: { signIn: "/sign-in", verifyRequest: "/sign-in?sent=1", error: "/sign-in" },
   callbacks: {
+    async signIn({user}) {
+      if (!user.email) return false;
+      const account = await query("SELECT suspended_at FROM users WHERE lower(email)=$1",[user.email.toLowerCase()]);
+      return !account.rows[0]?.suspended_at;
+    },
     async session({ session, user }) {
       if (session.user) session.user.id = user.id;
       return session;
@@ -47,7 +50,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const session = await auth();
   if (!session?.user?.id) return null;
   const result = await query<{ id: string; name: string | null; email: string; role: Role; emailVerified: Date | null }>(
-    'SELECT id, name, email, role, "emailVerified" FROM users WHERE id = $1', [session.user.id],
+    'SELECT id, name, email, role, "emailVerified" FROM users WHERE id = $1 AND suspended_at IS NULL', [session.user.id],
   );
   const user = result.rows[0];
   if (!user?.emailVerified) return null;

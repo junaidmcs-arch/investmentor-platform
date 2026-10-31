@@ -21,6 +21,7 @@ export default function SessionsPage() {
   }
   return <div className="container">
     <header className="page-intro"><span className="eyebrow">A conversation with context</span><h1>Make room<br/>for understanding.</h1><p className="muted">Request a free educational session to discuss investment fundamentals, research methods, or how to understand risk.</p></header>
+    <p><Link className="button button-secondary" href="/sessions/book">Sign in to reserve an available time</Link></p>
     <div className={styles.formLayout}><section className={styles.formPanel}>
       {result ? <div className={styles.success} role="status"><CheckCircle2 size={30}/><h2>Your request has been received.</h2><p>{result.message}</p><span className={styles.reference}>{result.reference}</span><p>Your preferred time is a request. The consultant will confirm availability and share the meeting details separately.</p><Link href="/my-questions" className="button button-primary">View my workspace <ArrowRight size={16}/></Link></div> : <form className={styles.stack} onSubmit={submit}>
         <div><h2>Request an educational session</h2><p className={styles.meta}>All dates and times below are in Pakistan Standard Time (PKT).</p></div>

@@ -41,11 +41,11 @@ For changes to Dockerfiles, Compose, database migrations, or other files outside
 ```powershell
 docker compose exec web pnpm typecheck
 docker compose exec -e NODE_ENV=test web pnpm test
-docker compose exec -e NODE_ENV=production web pnpm build
+docker compose run --rm --no-deps -e NODE_ENV=production web pnpm build
 docker compose logs --tail 100 web worker initialize
 ```
 
-The build checks production compilation; the local website continues to use the development server. Production email/TLS and AWS connectivity still need separate validation.
+The build checks production compilation in a separate container so it does not overwrite the running development server's build files. `NODE_ENV=production` overrides Compose's development default for this check. Production email/TLS and AWS connectivity still need separate validation.
 
 ## Stop and restart
 

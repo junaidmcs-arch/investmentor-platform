@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import { ArrowRight, ChevronRight, Clock3, CalendarDays, BookOpen } from "lucide-react";
 import { type ContentEntry } from "@/lib/content";
 import { ContentCard } from "./content-library";
+import { BookmarkButton } from "@/components/bookmark-button";
 import styles from "../learning.module.css";
 
 export function ContentArticle({ entry, related = [] }: { entry: ContentEntry; related?: ContentEntry[] }) {
@@ -15,6 +16,7 @@ export function ContentArticle({ entry, related = [] }: { entry: ContentEntry; r
       <h1>{entry.title}</h1>
       <p className={styles.articleExcerpt}>{entry.excerpt}</p>
       <div className={styles.articleMetadata}><span>{entry.author}</span><span><Clock3 size={14} />{entry.readMinutes} min read</span><span><CalendarDays size={14} />Published {publishedDate}</span></div>
+      <BookmarkButton contentId={entry.id}/>
     </header>
     <div className={styles.articleGrid}>
       <article className={styles.articleBody}>

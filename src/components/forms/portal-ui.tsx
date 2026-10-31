@@ -26,12 +26,13 @@ export function ConfigurationNotice({ session }: { session: SessionState }) {
   return <div className={styles.quietNotice} role="status">Online inquiries and private accounts are not available yet. Service setup is in progress. You can continue exploring the public learning library.</div>;
 }
 
-export function AccessGate({ session, staff = false, children }: { session: SessionState; staff?: boolean; children: ReactNode }) {
+export function AccessGate({ session, staff = false, admin = false, children }: { session: SessionState; staff?: boolean; admin?: boolean; children: ReactNode }) {
   const pathname = usePathname();
   if (session.loading) return <p className={styles.loading} role="status">Opening your workspace…</p>;
   if (session.error) return <div className={styles.authNotice}><ErrorMessage message={session.error} /></div>;
   if (!session.configured) return <div className={styles.authNotice}><ShieldCheck size={30}/><h2>Private accounts are being prepared</h2><p>Secure sign-in and inquiry handling will be available once service setup is complete.</p><Link className="button button-secondary" href="/learn">Explore the learning library</Link></div>;
   if (!session.user) return <div className={styles.authNotice}><LockKeyhole size={30}/><h2>Sign in to continue</h2><p>Use your verified email to access your questions and responses. A question reference number does not grant access to private information.</p><Link className="button button-primary" href={`/sign-in?next=${encodeURIComponent(pathname)}`}>Sign in with email</Link></div>;
+  if (admin && session.user.role !== "ADMIN") return <div className={styles.authNotice}><h2>Administrator access required</h2><Link href="/dashboard">Return to your workspace</Link></div>;
   if (staff && !["ADMIN", "CONSULTANT"].includes(session.user.role)) return <div className={styles.authNotice}><LockKeyhole size={30}/><h2>This is the consultant workspace</h2><p>Your account can access your own questions and responses.</p><Link className="button button-primary" href="/my-questions">Go to my questions</Link></div>;
   return children;
 }

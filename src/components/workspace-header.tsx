@@ -21,6 +21,7 @@ export function WorkspaceHeader() {
   const staff = session.user && ["ADMIN", "CONSULTANT"].includes(session.user.role);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigation = session.user?.role === "ADMIN" ? [...links, {href:"/dashboard/users",label:"Users & consultants"}, {href:"/dashboard/governance",label:"Oversight"}] : links;
   async function logout() {
     setBusy(true); setError(null);
     try { await signOut({ callbackUrl: "/sign-in" }); }
@@ -40,7 +41,7 @@ export function WorkspaceHeader() {
       </div>
     </div>
     {staff && <nav className={`container ${styles.navigation}`} aria-label="Workspace navigation">
-      {links.map(link => {
+      {navigation.map(link => {
         const active = link.href === "/dashboard" ? pathname === link.href || pathname.startsWith("/dashboard/questions/") : pathname === link.href || pathname.startsWith(`${link.href}/`);
         return <Link key={link.href} href={link.href} aria-current={active ? "page" : undefined}>{link.label}</Link>;
       })}

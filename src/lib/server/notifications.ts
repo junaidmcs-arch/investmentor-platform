@@ -6,5 +6,6 @@ export function appLink(path: string) {
 }
 export async function enqueueEmail(client: PoolClient, email: string | null, subject: string, body: string, key: string) {
   if (!email) return;
+  await client.query("INSERT INTO investor_notifications(audience_email,title,dedupe_key) VALUES(lower($1),$2,$3) ON CONFLICT(dedupe_key) DO NOTHING", [email,subject,key]);
   await client.query("INSERT INTO notification_outbox(to_email,subject,body,dedupe_key) VALUES($1,$2,$3,$4) ON CONFLICT(dedupe_key) DO NOTHING", [email, subject, body, key]);
 }

@@ -8,11 +8,11 @@ export function mapContent(row: Record<string, unknown>): ContentEntry {
 }
 export async function getPublishedContents(kind?: ContentEntry["kind"]): Promise<ContentEntry[]> {
   if (!isDatabaseConfigured()) return contentEntries.filter(entry => !kind || entry.kind === kind);
-  const result = await query(`SELECT ${contentColumns} FROM contents WHERE status='PUBLISHED' ${kind ? "AND kind=$1" : ""} ORDER BY level NULLS LAST, published_at DESC`, kind ? [kind] : []);
+  const result = await query(`SELECT ${contentColumns} FROM contents WHERE status='PUBLISHED' AND NOT moderation_hold ${kind ? "AND kind=$1" : ""} ORDER BY level NULLS LAST, published_at DESC`, kind ? [kind] : []);
   return result.rows.map(mapContent);
 }
 export async function getPublishedContent(slug: string): Promise<ContentEntry | null> {
   if (!isDatabaseConfigured()) return contentEntries.find(entry => entry.slug === slug) ?? null;
-  const result = await query(`SELECT ${contentColumns} FROM contents WHERE slug=$1 AND status='PUBLISHED'`, [slug]);
+  const result = await query(`SELECT ${contentColumns} FROM contents WHERE slug=$1 AND status='PUBLISHED' AND NOT moderation_hold`, [slug]);
   return result.rows[0] ? mapContent(result.rows[0]) : null;
 }

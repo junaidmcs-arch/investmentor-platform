@@ -66,6 +66,8 @@ Authentication emails are sent directly by Auth.js. Other service emails are que
 
 ## Architecture
 
+See [the four-role ecosystem and operating guide](docs/role-ecosystem.md) for Guest, Investor, Consultant, and Administrator workflows, including staff onboarding, content moderation, saved research, notifications, and scheduling.
+
 One Next.js App Router/TypeScript application on EC2, behind Nginx, backed by PostgreSQL RDS. PM2 supervises the web process and a separate lightweight mail worker. No microservices, trading engine, live price feeds, payment gateway, AI investment recommendations, or WhatsApp Business API are included.
 
 ```text

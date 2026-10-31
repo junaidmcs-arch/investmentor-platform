@@ -6,6 +6,7 @@ import { ArrowRight, CalendarDays, MessageSquareText, Plus } from "lucide-react"
 import { useEffect, useState } from "react";
 import { apiRequest, pakistanDate, safeMeetingUrl, type Consultation, type Question, usePortalSession } from "@/components/forms/portal-client";
 import { AccessGate, ErrorMessage, StatusBadge } from "@/components/forms/portal-ui";
+import { InvestorNavigation } from "@/components/forms/investor-navigation";
 import styles from "@/components/forms/portal.module.css";
 
 export default function MyQuestionsPage() {
@@ -23,7 +24,7 @@ export default function MyQuestionsPage() {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [session.user]);
-  return <div className={`container ${styles.workspace}`}><header className="page-intro"><span className="eyebrow">Your private workspace</span><h1>A clearer picture,<br/>one question at a time.</h1><p className="muted">Your questions, published responses, and session requests, kept together.</p></header><AccessGate session={session}>
+  return <div className={`container ${styles.workspace}`}><header className="page-intro"><span className="eyebrow">Your private workspace</span><h1>A clearer picture,<br/>one question at a time.</h1><p className="muted">Your questions, published responses, and session requests, kept together.</p></header><AccessGate session={session}><InvestorNavigation/>
     <div className={styles.inline} style={{ justifyContent: "space-between", marginBottom: 30 }}><p className={styles.meta}>Signed in as {session.user?.email}</p><div className={styles.inline}>{session.user && ["ADMIN", "CONSULTANT"].includes(session.user.role) && <Link className="text-link" href="/dashboard">Consultant dashboard</Link>}<button className="button button-secondary button-small" onClick={() => signOut({ callbackUrl: "/" })}>Sign out</button></div></div>
     <ErrorMessage message={error}/>
     {loading ? <p className={styles.loading} role="status">Loading your questions and sessions…</p> : !error && <>

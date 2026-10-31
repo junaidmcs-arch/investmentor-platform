@@ -21,6 +21,7 @@ export default function ContentManagerPage() {
   const [preview, setPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const selectedContent = contents.find(content => content.id === selectedId);
   const staff = session.user && ["ADMIN", "CONSULTANT"].includes(session.user.role);
   useEffect(() => {
     if (!staff) return;
@@ -54,7 +55,7 @@ export default function ContentManagerPage() {
       <button className="button button-secondary button-small" type="button" onClick={() => setPreview((value) => !value)} aria-expanded={preview}><Eye size={15}/>{preview ? "Hide preview" : "Preview article"}</button>
       {preview && <div className={`prose ${styles.preview}`}><h2>{draft.title || "Untitled draft"}</h2><ReactMarkdown>{draft.body || "Your article preview will appear here."}</ReactMarkdown></div>}
       <div className={styles.split}><Field id="content-status" label="Publication status"><select className="select" id="content-status" value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as ContentDraft["status"] })}><option value="DRAFT">Private draft</option><option value="PUBLISHED">Published</option></select></Field><label className={styles.check} style={{ alignSelf: "center" }}><input type="checkbox" checked={draft.featured} onChange={(event) => setDraft({ ...draft, featured: event.target.checked })}/><span>Feature this content in the library</span></label></div>
-      <ErrorMessage message={error}/>{success && <div className={styles.success} role="status">{success}</div>}<button className="button button-primary" type="submit" disabled={busy}><Save size={16}/>{busy ? "Saving…" : draft.status === "PUBLISHED" ? "Save and publish" : "Save private draft"}</button>
+      <ErrorMessage message={error}/>{selectedContent?.moderationHold && <p className={styles.quietNotice}>On moderation hold: {selectedContent.moderationNote}. An administrator must release this hold in Oversight before editing can be saved.</p>}{success && <div className={styles.success} role="status">{success}</div>}<button className="button button-primary" type="submit" disabled={busy || Boolean(selectedContent?.moderationHold)}><Save size={16}/>{busy ? "Saving…" : draft.status === "PUBLISHED" ? "Save and publish" : "Save private draft"}</button>
     </form></section></div>
   </AccessGate></div>;
 }

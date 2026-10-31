@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { PGlite, type PGliteInterface } from "@electric-sql/pglite";
 import type { Pool, PoolClient } from "pg";
@@ -53,10 +53,15 @@ import { GET as getQuestions, POST as postQuestion } from "@/app/api/questions/r
 import { GET as getQuestion } from "@/app/api/questions/[id]/route";
 import { POST as postContent } from "@/app/api/admin/content/route";
 import { POST as postSignIn } from "@/app/api/auth/[...nextauth]/route";
+import { createConsultant,updateUser,listUsers,moderateContent,adminAnalytics,auditHistory,listBookmarks,setBookmark,listNotifications,readNotification,createSlot,listSlots,bookSlot,closeSlot } from "@/lib/server/ecosystem";
+import { userUpdateInput,consultantCreateInput,moderationInput,slotInput,slotBookingInput } from "@/lib/server/validation";
+import { GET as getUsers,POST as postConsultant } from "@/app/api/admin/users/route";
+import { GET as getAvailability } from "@/app/api/availability/route";
 
 const alice: CurrentUser = { id: "11111111-1111-4111-8111-111111111111", name: "Test Alice", email: "alice@example.test", role: "CLIENT" };
 const bob: CurrentUser = { id: "22222222-2222-4222-8222-222222222222", name: "Test Bob", email: "bob@example.test", role: "CLIENT" };
 const consultant: CurrentUser = { id: "33333333-3333-4333-8333-333333333333", name: "Test Consultant", email: "consultant@example.test", role: "CONSULTANT" };
+const admin: CurrentUser = {id:"55555555-5555-4555-8555-555555555555",name:"Test Admin",email:"admin@example.test",role:"ADMIN"};
 const question = () => questionInput.parse({ name: "Test Alice", email: alice.email, whatsapp: "0300 1234567", category: "Valuation", subject: "Understanding valuation assumptions", body: "Please explain how an assumed P/E affects a hypothetical valuation." });
 const draft = () => responseInput.parse({ body: "Draft explanation awaiting review.", analysisDate: "2026-10-29", publish: false });
 const published = () => responseInput.parse({ ...draft(), body: "The estimate changes when the chosen multiple changes.", risks: "Future earnings may differ from the illustrative assumptions.", assumptions: "The example assumes constant hypothetical earnings per share.", sources: "https://www.psx.com.pk/", publish: true });
@@ -66,7 +71,7 @@ const request = (pathname: string, body?: unknown, origin = "http://localhost:30
 beforeAll(async () => {
   state.db = new PGlite();
   await state.db.waitReady;
-  await state.db.exec(await readFile(path.join(process.cwd(), "db/migrations/001_initial.sql"), "utf8"));
+  for (const file of (await readdir(path.join(process.cwd(),"db/migrations"))).filter(f=>f.endsWith(".sql")).sort()) await state.db.exec(await readFile(path.join(process.cwd(),"db/migrations",file),"utf8"));
   vi.stubEnv("AUTH_URL", "http://localhost:3000");
   vi.stubEnv("AUTH_SECRET", "test-only-secret-never-used-in-production");
 }, 30000);
@@ -75,13 +80,119 @@ beforeEach(async () => {
   state.configured = true;
   state.user = null;
   state.rejectOutbox = false;
-  await state.db!.exec("TRUNCATE notification_outbox, question_events, responses, questions, consultations, content_revisions, contents, contacts, sessions, accounts, verification_token, users, rate_limits RESTART IDENTITY CASCADE");
-  for (const user of [alice, bob, consultant]) {
+  vi.stubEnv("ADMIN_EMAILS","");
+  await state.db!.exec("TRUNCATE investor_notifications, audit_events, notification_outbox, question_events, responses, questions, consultations, content_revisions, contents, contacts, sessions, accounts, verification_token, users, rate_limits RESTART IDENTITY CASCADE");
+  for (const user of [alice, bob, consultant, admin]) {
     await state.db!.query('INSERT INTO users(id,name,email,role,"emailVerified") VALUES($1,$2,$3,$4,now())', [user.id,user.name,user.email,user.role]);
   }
 });
 
 afterAll(async () => { await state.db?.close(); vi.unstubAllEnvs(); });
+
+describe("Four-role Stage 1 boundaries",()=>{
+  it("rejects guest and consultant user administration, including direct API requests",async()=>{
+    expect((await getUsers(request('/api/admin/users'))).status).toBe(401);
+    state.user=consultant;
+    expect((await getUsers(request('/api/admin/users'))).status).toBe(403);
+    expect((await postConsultant(request('/api/admin/users',{name:'New Expert',email:'new@example.test'}))).status).toBe(403);
+    await expect(updateUser(alice.id,{role:'ADMIN',suspended:false},consultant)).rejects.toMatchObject({status:403});
+    expect((await listUsers(admin)).users).toHaveLength(4);
+  });
+  it("invites an unverified consultant atomically, records the actor, and refuses duplicate email takeover",async()=>{
+    const input=consultantCreateInput.parse({name:'New Expert',email:'New@Example.test'});
+    await createConsultant(input,admin);
+    const user=(await state.db!.query('SELECT id,role,"emailVerified" FROM users WHERE email=$1',[input.email])).rows[0];
+    expect(user).toMatchObject({role:'CONSULTANT',emailVerified:null});
+    expect((await auditHistory(admin)).events[0]).toMatchObject({actor:admin.email,action:'consultant.created'});
+    await expect(createConsultant(consultantCreateInput.parse({name:'Existing',email:alice.email}),admin)).rejects.toBeDefined();
+    state.rejectOutbox=true;
+    await expect(createConsultant(consultantCreateInput.parse({name:'Rollback',email:'rollback@example.test'}),admin)).rejects.toThrow();
+    expect((await state.db!.query("SELECT id FROM users WHERE email='rollback@example.test'")).rows).toHaveLength(0);
+  });
+  it("revokes sessions on access changes and protects the acting/bootstrap administrator",async()=>{
+    await state.db!.query('INSERT INTO sessions("userId",expires,"sessionToken") VALUES($1,now()+interval \'1 day\',\'revocable\')',[alice.id]);
+    await updateUser(alice.id,userUpdateInput.parse({role:'CONSULTANT',suspended:false}),admin);
+    expect((await state.db!.query('SELECT id FROM sessions WHERE "userId"=$1',[alice.id])).rows).toHaveLength(0);
+    await updateUser(alice.id,{role:'CONSULTANT',suspended:true},admin);
+    expect((await state.db!.query<{suspended_at:string|null}>('SELECT suspended_at FROM users WHERE id=$1',[alice.id])).rows[0].suspended_at).not.toBeNull();
+    await expect(updateUser(admin.id,{role:'CLIENT',suspended:true},admin)).rejects.toMatchObject({status:400});
+    vi.stubEnv('ADMIN_EMAILS',bob.email);
+    await expect(updateUser(bob.id,{role:'CLIENT',suspended:true},admin)).rejects.toMatchObject({status:400});
+    await state.db!.query("UPDATE users SET role='CLIENT' WHERE id=$1",[admin.id]);
+    await expect(updateUser(alice.id,{role:'ADMIN',suspended:false},admin)).rejects.toMatchObject({status:403});
+  });
+  it("accepts WhatsApp-only guest questions without inventing an account or sending an email",async()=>{
+    expect(questionInput.safeParse({...question(),email:'',whatsapp:''}).success).toBe(false);
+    const data=questionInput.parse({...question(),email:'',whatsapp:'03001234567'});
+    const created=await createQuestion(data,null);
+    expect(created.message).toContain('manual WhatsApp');
+    expect((await state.db!.query('SELECT email,user_id FROM contacts')).rows[0]).toEqual({email:null,user_id:null});
+    expect((await state.db!.query('SELECT id FROM notification_outbox')).rows).toHaveLength(0);
+    await expect(createQuestion(data,alice)).rejects.toMatchObject({status:400});
+  });
+  it("isolates bookmarks and hides saved content when moderation removes publication",async()=>{
+    const content=await saveContent(contentInput.parse({...article(),status:'PUBLISHED'}),consultant);
+    await setBookmark(content.id!,true,alice);
+    await setBookmark(content.id!,true,alice);
+    expect(await listBookmarks(alice)).toHaveLength(1);
+    expect(await listBookmarks(bob)).toHaveLength(0);
+    await expect(moderateContent(content.id!,{hold:true,note:'Needs source review'},consultant)).rejects.toMatchObject({status:403});
+    await moderateContent(content.id!,moderationInput.parse({hold:true,note:'Needs source review'}),admin);
+    expect(await listBookmarks(alice)).toHaveLength(0);
+    expect(await getPublishedContent(article().slug)).toBeNull();
+    await expect(saveContent(contentInput.parse({...article(),status:'PUBLISHED'}),consultant,content.id)).rejects.toMatchObject({status:409});
+    await moderateContent(content.id!,{hold:false,note:'Source review completed'},admin);
+    expect(await getPublishedContent(article().slug)).toBeNull();
+    await saveContent(contentInput.parse({...article(),status:'PUBLISHED'}),consultant,content.id);
+    expect(await listBookmarks(alice)).toHaveLength(1);
+    await setBookmark(content.id!,false,bob);
+    expect(await listBookmarks(alice)).toHaveLength(1);
+  });
+  it("keeps notification recipients private, deduplicates events, and rolls back with delivery failures",async()=>{
+    const q=await createQuestion(question(),null);
+    const feed=await listNotifications(alice);
+    expect(feed.unread).toBe(1);
+    expect((await listNotifications(bob)).notifications).toHaveLength(0);
+    await expect(readNotification(feed.notifications[0].id,bob)).rejects.toMatchObject({status:404});
+    await readNotification(feed.notifications[0].id,alice);
+    expect((await listNotifications(alice)).unread).toBe(0);
+    state.rejectOutbox=true;
+    await expect(updateQuestionStatus(q.id,'IN_PROGRESS',consultant)).rejects.toThrow();
+    expect((await listNotifications(alice)).notifications).toHaveLength(1);
+    expect((await questionDetail(q.id,alice)).question.status).toBe('NEW');
+  });
+  it("reserves a slot once, rejects overlapping availability, and releases cancellation safely",async()=>{
+    const start=new Date(Date.now()+86400000).toISOString(),end=new Date(Date.now()+90000000).toISOString();
+    await createSlot(slotInput.parse({startsAt:start,endsAt:end}),consultant);
+    await expect(createSlot(slotInput.parse({startsAt:start,endsAt:end}),consultant)).rejects.toMatchObject({status:409});
+    const slots=await listSlots(alice);expect(slots).toHaveLength(1);
+    const data=slotBookingInput.parse({name:'Test Alice',slotId:slots[0].id,topic:'Learning to value companies',notes:''});
+    await bookSlot(data,alice);
+    expect(await listSlots(bob)).toHaveLength(0);
+    await expect(bookSlot(data,bob)).rejects.toMatchObject({status:409});
+    await expect(closeSlot(slots[0].id,consultant)).rejects.toMatchObject({status:409});
+    const session=(await listConsultations(alice))[0];
+    await expect(updateConsultation(session.id,consultationUpdateInput.parse({status:'CONFIRMED',confirmedAt:end}),consultant)).rejects.toMatchObject({status:400});
+    await updateConsultation(session.id,consultationUpdateInput.parse({status:'CANCELLED'}),consultant);
+    expect(await listSlots(bob)).toHaveLength(1);
+    await expect(updateConsultation(session.id,consultationUpdateInput.parse({status:'CONFIRMED',confirmedAt:start}),consultant)).rejects.toMatchObject({status:409});
+    await bookSlot(data,bob);
+    expect(await listConsultations(alice)).toHaveLength(1);
+    expect(await listConsultations(bob)).toHaveLength(1);
+  });
+  it("requires verified membership for availability and respects configured-admin availability",async()=>{
+    expect((await getAvailability(request('/api/availability'))).status).toBe(401);
+    const startsAt=new Date(Date.now()+86400000).toISOString(),endsAt=new Date(Date.now()+88200000).toISOString();
+    await expect(createSlot(slotInput.parse({startsAt,endsAt}),alice)).rejects.toMatchObject({status:403});
+    vi.stubEnv('ADMIN_EMAILS',admin.email);
+    await state.db!.query("UPDATE users SET role='CLIENT' WHERE id=$1",[admin.id]);
+    await createSlot(slotInput.parse({startsAt,endsAt}),admin);
+    expect(await listSlots(alice)).toHaveLength(1);
+    const other=await listSlots(alice);
+    await expect(closeSlot(other[0].id,consultant)).rejects.toMatchObject({status:404});
+    expect((await adminAnalytics(admin)).users.total).toBe(4);
+  });
+});
 
 describe("PostgreSQL-backed inquiry and publication workflow", () => {
   it("runs the installed Auth.js adapter against the real schema with single-use verification tokens and revocable sessions", async () => {

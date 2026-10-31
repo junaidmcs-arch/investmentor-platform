@@ -11,7 +11,7 @@ This procedure targets an existing Linux EC2 instance and a dedicated PostgreSQL
 - For RDS, provide its current trusted CA certificate through `DATABASE_CA_CERT` (literal `\n` separators are accepted). Do not disable certificate verification. Avoid connection-string SSL parameters that can override the explicit certificate configuration.
 - Allow RDS ingress from the EC2 security group only. Keep database credentials off the client and out of Git.
 - Configure a verified email sender using SES SMTP or Resend SMTP and set `EMAIL_SERVER` and `EMAIL_FROM`. URL-encode special characters in SMTP credentials. Production SMTP requires TLS. SES accounts in the sandbox need the appropriate sender/recipient verification or production access.
-- Add the initial operator's verified email to `ADMIN_EMAILS`. Staff roles can also be assigned in the database by an authorized administrator; there is no public role-assignment form.
+- Add the initial operator's verified email to `ADMIN_EMAILS`. After sign-in, use the administrator-only Users & consultants screen for invitations, role changes, and suspensions. There is no public role-assignment form. Configured bootstrap administrators are protected from changes in that screen.
 - Configure the optional public WhatsApp number and contact email before building.
 
 ## First release

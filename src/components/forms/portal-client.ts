@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 
 export type PortalUser = { id: string; name?: string | null; email: string; role: "CLIENT" | "CONSULTANT" | "ADMIN" };
 export type SessionState = { user: PortalUser | null; configured: boolean; loading: boolean; error: string | null };
-export type Question = { id: string; reference: string; subject: string; body: string; category: string; status: string; name?: string; email?: string; contactName?: string; contactEmail?: string; createdAt: string };
+export type Question = { id: string; reference: string; subject: string; body: string; category: string; status: string; whatsapp?: string; name?: string; email?: string; contactName?: string; contactEmail?: string; createdAt: string };
 export type ResponseRecord = { id: string; body: string; sources: string; risks: string; assumptions: string; analysisDate: string; consultantId?: string; status?: string; publishedAt?: string | null; createdAt?: string };
 export type QuestionEvent = { id: string; status?: string; toStatus?: string; type?: string; note?: string; createdAt: string };
 export type QuestionDetail = { question: Question; responses: ResponseRecord[]; events: QuestionEvent[] };
 export type Consultation = { id: string; reference?: string; name?: string; email?: string; contactName?: string; contactEmail?: string; topic: string; clientNotes?: string; notes?: string; status: string; preferredAt: string; confirmedAt?: string | null; meetingUrl?: string | null; createdAt: string };
-export type ManagedContent = { id: string; slug: string; kind: "lesson" | "study" | "market" | "faq"; title: string; excerpt: string; body: string; level?: number | null; category: string; readMinutes: number; publishedAt?: string | null; author: string; featured?: boolean; status: "DRAFT" | "PUBLISHED" };
+export type ManagedContent = { id: string; slug: string; kind: "lesson" | "study" | "market" | "faq"; title: string; excerpt: string; body: string; level?: number | null; category: string; readMinutes: number; publishedAt?: string | null; author: string; featured?: boolean; moderationHold?: boolean; moderationNote?: string; status: "DRAFT" | "PUBLISHED" };
 
 export const categories = [
   ["GENERAL_EDUCATION", "Getting started & general education"],

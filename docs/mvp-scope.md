@@ -6,11 +6,11 @@ Brand: **InvestMentor by Validacore**, confirmed by the project owner. Audience:
 
 The five learning levels share one content system: basics, company analysis, valuation, risk, and market behavior. Risk appears across the curriculum. Initial company examples are fictional and explicitly illustrative; market explainers describe conditional relationships rather than guaranteed sector outcomes.
 
-Visitors can read public resources without an account. Website inquiry forms require name and email, with WhatsApp optional. Verified email access adds private history. WhatsApp-only inquiries can be logged by staff against a contact record without inventing an authenticated account.
+Visitors can read public resources without an account. Website inquiries require a name and either email or a Pakistani WhatsApp number. Verified email access adds private history, saved research, notifications, and slot reservations. WhatsApp-only inquiries stay contact records for manual follow-up, without inventing authenticated accounts.
 
 Question states are New, In progress, Answered, and Declined. Response drafts remain staff-only. Publishing requires an answer, risks, assumptions, and an analysis date. Publication, status history, and queued notification are committed together. Human-readable reference numbers are support identifiers, never authentication secrets.
 
-Sessions are requests for educational conversations. Preferred time is not a reserved slot. The consultant confirms manually and records one HTTPS meeting link. The MVP does not automatically create Calendar/Meet/Zoom events or manage availability conflicts.
+Sessions are requests for educational conversations. Guests can request a preferred time; verified investors can reserve consultant-published slots with local overlap and double-booking checks. Staff confirm sessions and supply HTTPS meeting links. Optional external booking pages are linked explicitly; their calendars are not synchronized with local availability. See [role ecosystem](role-ecosystem.md) for boundaries and operating steps.
 
 The P/E lab takes hypothetical EPS, an assumed multiple, and a reference price. It shows an assumption-dependent estimate and sensitivity to changed inputs, not a recommended stock or expected return. DCF is taught in content; a full DCF engine is deferred.
 
@@ -27,7 +27,7 @@ The P/E lab takes hypothetical EPS, an assumed multiple, and a reference price. 
 
 ## Deferred
 
-Paid packages and subscriptions, payment gateways, live market data, real-time charts, trade execution, brokerage integrations, buy/sell signals, AI recommendations, portfolio tracking/optimization, automated stress testing, automated WhatsApp ingestion, full course delivery/certificates, and self-service scheduling are not part of this implementation.
+Paid packages and subscriptions, pricing configuration, payment gateways, live market data, real-time charts, trade execution, brokerage integrations, buy/sell signals, AI recommendations, portfolio tracking/optimization, automated stress testing, automated WhatsApp ingestion, full course delivery/certificates, and external calendar synchronization are not part of this implementation.
 
 Premium consultancy and security-specific research need separately defined service scope and applicable review before activation. Free pricing by itself is not treated as a regulatory exemption. Legal/policy text and initial educational content require operator review before public launch.
 
