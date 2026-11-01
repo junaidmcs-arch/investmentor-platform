@@ -14,6 +14,9 @@
 .step p { margin:0; font-size:14px; }
 .help { display:block; margin-top:7px; color:#6b7368; font-size:12px; line-height:1.6; }
 .error { border:1px solid #dfb8a7; color:#853919; background:#fff5ee; border-radius:8px; padding:14px 17px; font-size:14px; line-height:1.6; }
+.formPanel .stack input.emailInvalid[aria-invalid="true"] { border-color:#b42318; background:#fff5f4; }
+.formPanel .stack input.emailInvalid[aria-invalid="true"]:focus { border-color:#b42318; outline-color:#b42318; }
+.fieldError { color:#b42318; font-size:12px; line-height:1.5; }
 .success { border:1px solid #b9d3c0; background:#edf5ed; color:#244a32; border-radius:10px; padding:24px; line-height:1.7; }
 .success h2 { margin:10px 0; }
 .success p { margin:7px 0; }

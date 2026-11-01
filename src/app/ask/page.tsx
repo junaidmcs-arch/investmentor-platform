@@ -6,11 +6,13 @@ import { useEffect, useState, type FormEvent } from "react";
 import { apiRequest, categories, usePortalSession } from "@/components/forms/portal-client";
 import { ConfigurationNotice, ErrorMessage, Field } from "@/components/forms/portal-ui";
 import styles from "@/components/forms/portal.module.css";
+import { emailInput } from "@/lib/email";
 
 export default function AskPage() {
   const session = usePortalSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState("");
   const [result, setResult] = useState<{ reference: string; message: string; canTrack: boolean } | null>(null);
   const [subject, setSubject] = useState("");
   useEffect(() => {
@@ -18,8 +20,19 @@ export default function AskPage() {
     if (topic) setSubject(current => current || topic.trim().slice(0, 160));
   }, []);
 
+  function validateEmail(input: HTMLInputElement, showError = true) {
+    const value = input.value.trim();
+    const message = !value && input.required ? "Enter your email address." : value && !emailInput.safeParse(value).success ? "Enter a valid email address, such as name@example.com." : "";
+    input.setCustomValidity(message);
+    if (showError) setEmailError(message);
+    return !message;
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBusy(true); setError(null);
+    event.preventDefault();
+    const emailField = event.currentTarget.elements.namedItem("email") as HTMLInputElement;
+    if (!validateEmail(emailField)) { emailField.focus(); return; }
+    setBusy(true); setError(null);
     const values = Object.fromEntries(new FormData(event.currentTarget));
     try { setResult(await apiRequest("/api/questions", { method: "POST", body: JSON.stringify(values) })); }
     catch (problem) { setError(problem instanceof Error ? problem.message : "Your question could not be submitted."); }
@@ -35,7 +48,10 @@ export default function AskPage() {
           <ConfigurationNotice session={session}/>
           <div className={styles.split}>
             <Field id="name" label="Your name *"><input key={session.user?.id ?? "guest"} className="input" id="name" name="name" autoComplete="name" required minLength={2} maxLength={100} defaultValue={session.user?.name ?? ""}/></Field>
-            <Field id="email" label={session.user ? "Email address *" : "Email address"} hint="Email enables private online history. Without email, provide WhatsApp for manual follow-up."><input key={session.user?.id ?? "guest"} className="input" id="email" name="email" type="email" autoComplete="email" required={Boolean(session.user)} maxLength={254} defaultValue={session.user?.email ?? ""} readOnly={Boolean(session.user)}/></Field>
+            <Field id="email" label={session.user ? "Email address *" : "Email address"} hint="Email enables private online history. Without email, provide WhatsApp for manual follow-up.">
+              <input key={session.user?.id ?? "guest"} className={`input ${emailError ? styles.emailInvalid : ""}`} id="email" name="email" type="email" autoComplete="email" required={Boolean(session.user)} maxLength={254} defaultValue={session.user?.email ?? ""} readOnly={Boolean(session.user)} aria-invalid={Boolean(emailError)} aria-describedby={emailError ? "email-error" : undefined} onBlur={event => validateEmail(event.currentTarget)} onChange={event => validateEmail(event.currentTarget, Boolean(emailError))} onInvalid={event => validateEmail(event.currentTarget)}/>
+              {emailError && <span id="email-error" className={styles.fieldError} role="alert">{emailError}</span>}
+            </Field>
           </div>
           <Field id="whatsapp" label="WhatsApp number" hint="Required when you do not provide email · e.g. 0300 1234567"><input className="input" id="whatsapp" name="whatsapp" type="tel" autoComplete="tel" maxLength={30}/></Field>
           <Field id="category" label="What is your question about? *"><select className="select" id="category" name="category" required defaultValue=""><option value="" disabled>Select a topic</option>{categories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>

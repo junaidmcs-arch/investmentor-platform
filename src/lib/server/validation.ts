@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { emailInput } from "../email";
 
-export const emailInput = z.string().trim().email().max(254).transform(value => value.toLowerCase());
+export { emailInput } from "../email";
 const email = emailInput;
 export function normalizePakistaniPhone(input: string) {
   const value = input.replace(/[\s()-]/g, "");
